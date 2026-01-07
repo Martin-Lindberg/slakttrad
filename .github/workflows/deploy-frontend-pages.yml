@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: slakttrad-mvp/frontend
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: "lts/*"
           cache: "npm"
-          cache-dependency-path: slakttrad-mvp/frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install
         run: npm ci
@@ -42,7 +42,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: slakttrad-mvp/frontend/dist
+          path: frontend/dist
 
   deploy:
     needs: build
