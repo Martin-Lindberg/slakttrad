@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: slakttrad_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: slakttrad
+      POSTGRES_USER: slakttrad
+      POSTGRES_PASSWORD: slakttrad_local_pw
+    ports:
+      - "5432:5432"
+    volumes:
+      - slakttrad_db_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:4
+    container_name: slakttrad_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+volumes:
+  slakttrad_db_data:

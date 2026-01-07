@@ -1,0 +1,78 @@
+/* Steg 5D – Design polish (globalt)
+   Fokus: proffsig app-känsla, bättre kontrast/spacing, tydliga states.
+   Inga nya beroenden. */
+
+:root{
+  --bg: radial-gradient(1200px 600px at 20% 0%, #eef2ff 0%, #f6f7fb 45%, #f6f7fb 100%);
+  --surface: rgba(255,255,255,0.92);
+  --surface-2: rgba(250,251,255,0.92);
+  --border: rgba(17, 17, 17, 0.10);
+
+  --text: #111111;
+  --muted: rgba(17,17,17,0.62);
+
+  --primary: #111111;
+  --primary-2: rgba(17,17,17,0.06);
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-sm: 0 6px 18px rgba(0,0,0,0.08);
+  --shadow-md: 0 10px 28px rgba(0,0,0,0.10);
+  --shadow-lg: 0 18px 44px rgba(0,0,0,0.14);
+
+  --radius: 16px;
+}
+
+*{ box-sizing: border-box; }
+
+html, body{ height: 100%; }
+body{
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a{ color: inherit; }
+
+/* Inputs */
+input, select, button{ font: inherit; }
+input, select{
+  outline: none;
+}
+input:focus, select:focus{
+  border-color: rgba(17,17,17,0.28) !important;
+  box-shadow: 0 0 0 4px rgba(17,17,17,0.10);
+}
+
+/* Buttons – global hover/active eftersom vi kör inline-styles i React */
+button{
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease, opacity 120ms ease;
+}
+button:hover{
+  filter: brightness(0.985);
+}
+button:active{
+  transform: translateY(1px);
+}
+button:disabled{
+  opacity: 0.55;
+  cursor: not-allowed !important;
+}
+
+/* Leaflet: se till att kartan aldrig hamnar över topbar/modal */
+.leaflet-container{
+  z-index: 0;
+}
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom{
+  z-index: 1;
+}
+
+/* Små skärmar: mindre padding och en mer appig känsla */
+@media (max-width: 860px){
+  body{
+    background: #f6f7fb;
+  }
+}
