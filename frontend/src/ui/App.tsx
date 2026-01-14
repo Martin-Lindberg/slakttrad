@@ -5,7 +5,7 @@ import L from "leaflet";
 
 type View = "login" | "hub" | "people" | "relations";
 
-const API_BASE = "http://localhost:4000";
+const API_BASE = (import.meta as any).env?.VITE_API_BASE || "http://localhost:4000";
 
 function getToken(): string | null {
   return localStorage.getItem("accessToken");
@@ -1256,41 +1256,7 @@ export function App() {
                       Exportera (CSV)
                     </button>
 
-                    <button
-                      style={styles.secondary}
-                      onClick={() => {
-                        if (!confirmLeaveIfDirty()) return;
-                        if (importBusy) return;
-                        if (importPreview && !window.confirm("Stäng import? Förhandsvisningen försvinner.")) return;
-                        setError(null);
-                        setImportCsvOpen((v) => !v);
-                        if (importCsvOpen) {
-                          setImportPreview(null);
-                        }
-                      }}
-                      title="Importera personer från CSV light"
-                    >
-                      {importCsvOpen ? "Stäng import" : "Importera personer"}
-                    </button>
-
-                    <button
-                      style={styles.secondary}
-                      onClick={() => {
-                        if (!confirmLeaveIfDirty()) return;
-                        setError(null);
-                        setImportRelOpen((v) => !v);
-                        if (!importRelOpen) {
-                          setImportRelCsv(null);
-                          setImportRelMappings({});
-                          setImportRelPreview(null);
-                        }
-                      }}
-                      disabled={!activeTreeId}
-                      title={!activeTreeId ? "Välj en släkt först" : "Importera relationer via mapping"}
-                    >
-                      {importRelOpen ? "Stäng relation-import" : "Importera relationer"}
-                    </button>
-
+                    <div style={styles.rowTight}>
                     <button
                       style={styles.secondary}
                       onClick={() => {
