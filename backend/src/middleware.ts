@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export function authGuard(req: Request, res: Response, next: NextFunction) {
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.header("Authorization");
   if (!header || !header.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Du måste vara inloggad." });
@@ -22,3 +22,6 @@ export function authGuard(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: "Ogiltig eller utgången token." });
   }
 }
+
+// bakåtkompatibelt alias
+export const authGuard = requireAuth;
