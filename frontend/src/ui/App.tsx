@@ -396,7 +396,7 @@ export function App() {
 
   function resetAllForms() {
     resetPersonForm(true);
-    resetRelationForm();
+    resetRelationForm(true);
     setCreateTreeOpen(false);
     setTreeName("");
     setImportCsvOpen(false);
@@ -428,38 +428,45 @@ export function App() {
   }
 
   async function refreshTrees(setDefaultActive = false) {
-  setError(null);
-  try {
-    const data = await api<any>("/trees");
+    setError(null);
+    try {
+      const data = await api<any>("/trees");
 
-    const list: Tree[] = Array.isArray(data)
-      ? data
-      : Array.isArray(data?.trees)
-      ? data.trees
-      : [];
+      const list: Tree[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.trees)
+        ? data.trees
+        : [];
 
-    setTrees(list);
+      setTrees(list);
 
-    if (setDefaultActive && !getActiveTreeId() && list.length > 0) {
-      setActiveTree(list[0].id);
+      if (setDefaultActive && !getActiveTreeId() && list.length > 0) {
+        setActiveTree(list[0].id);
+      }
+
+      // if activeTreeId no longer exists, clear it
+      const current = getActiveTreeId();
+      if (current && !list.some((t) => t.id === current)) {
+        setActiveTree(null);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Kunde inte hämta släktträd.");
     }
-
-    const current = getActiveTreeId();
-    if (current && !list.some((t) => t.id === current)) {
-      setActiveTree(null);
-    }
-  } catch (e: any) {
-    setError(e?.message ?? "Kunde inte hämta släktträd.");
   }
-}
-
 
   async function refreshPeople(treeId: string | null) {
     setError(null);
     if (!treeId) return setPeople([]);
     try {
-      const data = await api<{ people: Person[] }>(`/trees/${treeId}/people`);
-      setPeople(data.people ?? []);
+      const data = await api<any>(`/trees/${treeId}/people`);
+
+      const list: Person[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.people)
+        ? data.people
+        : [];
+
+      setPeople(list);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte hämta personer.");
     }
@@ -635,19 +642,14 @@ export function App() {
       const lat = idx("lat") !== -1 ? (row[idx("lat")] ?? "").trim() : "";
       const lng = idx("lng") !== -1 ? (row[idx("lng")] ?? "").trim() : "";
 
-      const birthNum = birth ? Number(birth) : NaN;
-      const deathNum = death ? Number(death) : NaN;
-      const latNum = lat ? Number(lat) : NaN;
-      const lngNum = lng ? Number(lng) : NaN;
+      const birth_year = birth ? Number(birth) : null;
+      const death_year = death ? Number(death) : null;
+      const latNum = lat ? Number(lat) : null;
+      const lngNum = lng ? Number(lng) : null;
 
-      if (birth && !Number.isFinite(birthNum)) warnings.push(`Rad ${r + 1}: ogiltigt födelseår "${birth}" (sätts som tomt).`);
-      if (death && !Number.isFinite(deathNum)) warnings.push(`Rad ${r + 1}: ogiltigt dödsår "${death}" (sätts som tomt).`);
-
-      const birth_year = birth && Number.isFinite(birthNum) ? Math.trunc(birthNum) : null;
-      const death_year = death && Number.isFinite(deathNum) ? Math.trunc(deathNum) : null;
-
-      const hasValidLatLng = (lat || lng) && Number.isFinite(latNum) && Number.isFinite(lngNum);
-      if ((lat || lng) && !hasValidLatLng) {
+      if (birth && !Number.isFinite(birth_year)) warnings.push(`Rad ${r + 1}: ogiltigt födelseår "${birth}" (sätts som tomt).`);
+      if (death && !Number.isFinite(death_year)) warnings.push(`Rad ${r + 1}: ogiltigt dödsår "${death}" (sätts som tomt).`);
+      if ((lat || lng) && (!Number.isFinite(latNum) || !Number.isFinite(lngNum))) {
         warnings.push(`Rad ${r + 1}: ogiltig lat/lng (plats ignoreras).`);
       }
 
@@ -655,11 +657,11 @@ export function App() {
         first_name: first,
         last_name: last,
         gender: (gender === "man" || gender === "kvinna") ? gender : (gender ? gender : null),
-        birth_year,
-        death_year,
+        birth_year: birth && Number.isFinite(birth_year) ? Math.trunc(birth_year) : null,
+        death_year: death && Number.isFinite(death_year) ? Math.trunc(death_year) : null,
         place_label: place_label || null,
-        lat: hasValidLatLng ? latNum : null,
-        lng: hasValidLatLng ? lngNum : null
+        lat: (lat && lng && Number.isFinite(latNum) && Number.isFinite(lngNum)) ? latNum : null,
+        lng: (lat && lng && Number.isFinite(latNum) && Number.isFinite(lngNum)) ? lngNum : null
       });
     }
 
@@ -884,7 +886,7 @@ export function App() {
     setRelationsSearch("");
     setActiveTree(tree.id);
     resetPersonForm(true);
-    resetRelationForm();
+    resetRelationForm(true);
     setView("people");
   }
 
