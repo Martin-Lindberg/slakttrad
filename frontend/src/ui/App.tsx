@@ -1241,254 +1241,307 @@ export function App() {
               </div>
 
               <div style={styles.panel}>
-                <div style={styles.panelHeader}>
-                  <h2 style={styles.h2}>Mina släkter</h2>
-                  <div style={styles.rowTight}>
-                    <button
-                      style={styles.secondary}
-                      onClick={() => {
-                        if (!confirmLeaveIfDirty()) return;
-                        exportActiveTreeCsv();
-                      }}
-                      disabled={!activeTreeId}
-                      title={!activeTreeId ? "Välj en släkt först" : "Exportera personer och relationer"}
+  <div style={styles.panelHeader}>
+    <h2 style={styles.h2}>Mina släkter</h2>
+    <div style={styles.rowTight}>
+      <button
+        style={styles.secondary}
+        onClick={() => {
+          if (!confirmLeaveIfDirty()) return;
+          exportActiveTreeCsv();
+        }}
+        disabled={!activeTreeId}
+        title={!activeTreeId ? "Välj en släkt först" : "Exportera personer och relationer"}
+      >
+        Exportera (CSV)
+      </button>
+
+      <button
+        style={styles.secondary}
+        onClick={() => {
+          if (!confirmLeaveIfDirty()) return;
+          setError(null);
+          setImportCsvOpen((v) => !v);
+          setImportPreview(null);
+          setImportBusy(false);
+          // Stäng andra formulär när vi öppnar import
+          setImportRelOpen(false);
+          setImportRelPreview(null);
+          setImportRelMap({});
+          setImportRelBusy(false);
+          setCreateTreeOpen(false);
+          setTreeName("");
+          setRenamingTreeId(null);
+          setRenameValue("");
+        }}
+      >
+        {importCsvOpen ? "Stäng import personer" : "Importera personer"}
+      </button>
+
+      <button
+        style={styles.secondary}
+        onClick={() => {
+          if (!confirmLeaveIfDirty()) return;
+          setError(null);
+          setImportRelOpen((v) => !v);
+          setImportRelPreview(null);
+          setImportRelMap({});
+          setImportRelBusy(false);
+          // Stäng andra formulär när vi öppnar import
+          setImportCsvOpen(false);
+          setImportPreview(null);
+          setImportBusy(false);
+          setCreateTreeOpen(false);
+          setTreeName("");
+          setRenamingTreeId(null);
+          setRenameValue("");
+        }}
+        disabled={!activeTreeId}
+        title={!activeTreeId ? "Välj en släkt först" : "Importera relationer via CSV"}
+      >
+        {importRelOpen ? "Stäng import relationer" : "Importera relationer"}
+      </button>
+
+      <button
+        style={styles.secondary}
+        onClick={() => {
+          if (!confirmLeaveIfDirty()) return;
+          setError(null);
+          setCreateTreeOpen((v) => !v);
+          setTreeName("");
+          setRenamingTreeId(null);
+          setRenameValue("");
+          // stäng importpaneler
+          setImportCsvOpen(false);
+          setImportPreview(null);
+          setImportBusy(false);
+          setImportRelOpen(false);
+          setImportRelPreview(null);
+          setImportRelMap({});
+          setImportRelBusy(false);
+        }}
+      >
+        {createTreeOpen ? "Stäng" : "Skapa ny släkt"}
+      </button>
+    </div>
+  </div>
+
+  {createTreeOpen ? (
+    <div style={{ marginTop: 10 }}>
+      <label style={styles.label}>
+        Namn på släkt
+        <input
+          style={styles.input}
+          value={treeName}
+          onChange={(e) => setTreeName(e.target.value)}
+          placeholder="t.ex. Jarbrant"
+        />
+      </label>
+      <div style={styles.row}>
+        <button style={styles.primary} onClick={createTree}>
+          Spara
+        </button>
+        <button
+          style={styles.secondary}
+          onClick={() => {
+            if (treeName.trim() && !window.confirm("Du har osparat namn. Vill du stänga ändå?")) return;
+            setCreateTreeOpen(false);
+            setTreeName("");
+          }}
+        >
+          Avbryt
+        </button>
+      </div>
+    </div>
+  ) : null}
+
+  {importCsvOpen ? (
+    <div style={{ marginTop: 10 }}>
+      <div style={styles.hintBox}>
+        <div style={{ fontWeight: 700, marginBottom: 6 }}>Importera personer (CSV light)</div>
+        <div style={{ marginBottom: 8 }}>
+          CSV ska ha minst kolumnerna <strong>förnamn</strong> och <strong>efternamn</strong>. Övriga stöds: kön,
+          födelseår, dödsår, platsnamn, lat, lng.
+        </div>
+        <div style={{ marginBottom: 10, fontSize: 12, color: "var(--muted)" }}>
+          Obs: person_id i CSV ignoreras – nya ID skapas vid import.
+        </div>
+
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            handleImportPersonsCsv(f);
+          }}
+        />
+
+        {importPreview ? (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Förhandsvisning</div>
+            <div style={styles.smallMuted}>Hittade {importPreview.rows.length} personer att importera.</div>
+
+            {importPreview.warnings.length ? (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Varningar</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {importPreview.warnings.slice(0, 8).map((w, i) => (
+                    <li key={i} style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+                {importPreview.warnings.length > 8 ? (
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
+                    …och {importPreview.warnings.length - 8} till.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div style={styles.row}>
+              <button style={styles.primary} onClick={confirmImportPersons} disabled={importBusy}>
+                {importBusy ? "Importerar…" : "Importera"}
+              </button>
+              <button
+                style={styles.secondary}
+                onClick={() => {
+                  if (importBusy) return;
+                  setImportPreview(null);
+                }}
+              >
+                Rensa
+              </button>
+              <button
+                style={styles.secondary}
+                onClick={() => {
+                  if (importBusy) return;
+                  if (importPreview && !window.confirm("Stäng import? Förhandsvisningen försvinner.")) return;
+                  setImportCsvOpen(false);
+                  setImportPreview(null);
+                }}
+              >
+                Stäng
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+            Välj en CSV-fil för att skapa en förhandsvisning.
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null}
+
+  {importRelOpen ? (
+    <div style={{ marginTop: 10 }}>
+      <div style={styles.hintBox}>
+        <div style={{ fontWeight: 700, marginBottom: 6 }}>Importera relationer (CSV mapping)</div>
+        <div style={{ marginBottom: 8 }}>
+          CSV ska innehålla kolumnerna <strong>person_a</strong>, <strong>relationstyp</strong>, <strong>person_b</strong>.
+          (Det matchar vår export-fil.)
+        </div>
+
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            handleImportRelationsCsv(f);
+          }}
+        />
+
+        {importRelPreview ? (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Mapping</div>
+            <div style={styles.smallMuted}>Matcha namnen från CSV till personer i släkten. Sedan importeras relationerna.</div>
+
+            <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+              {Array.from(new Set(importRelPreview.rows.flatMap((x) => [x.aName, x.bName])))
+                .sort((a, b) => a.localeCompare(b))
+                .map((name) => (
+                  <label key={name} style={{ ...styles.label, marginTop: 0 }}>
+                    {name}
+                    <select
+                      style={styles.select}
+                      value={importRelMap[name] ?? ""}
+                      onChange={(e) => setImportRelMap((prev) => ({ ...prev, [name]: e.target.value }))}
                     >
-                      Exportera (CSV)
-                    </button>
+                      <option value="">(ej matchad)</option>
+                      {people.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.first_name} {p.last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+            </div>
 
-                    <div style={styles.rowTight}>
-                    <button
-                      style={styles.secondary}
-                      onClick={() => {
-                        if (!confirmLeaveIfDirty()) return;
-                        setError(null);
-                        setCreateTreeOpen((v) => !v);
-                        setTreeName("");
-                        setRenamingTreeId(null);
-                        setRenameValue("");
-                      }}
-                    >
-                      {createTreeOpen ? "Stäng" : "Skapa ny släkt"}
-                    </button>
-                  </div>
-                </div>
-
-                {createTreeOpen ? (
-                  <div style={{ marginTop: 10 }}>
-                    <label style={styles.label}>
-                      Namn på släkt
-                      <input style={styles.input} value={treeName} onChange={(e) => setTreeName(e.target.value)} placeholder="t.ex. Jarbrant" />
-                    </label>
-                    <div style={styles.row}>
-                      <button style={styles.primary} onClick={createTree}>
-                        Spara
-                      </button>
-                      <button
-                        style={styles.secondary}
-                        onClick={() => {
-                          if (treeName.trim() && !window.confirm("Du har osparat namn. Vill du stänga ändå?")) return;
-                          setCreateTreeOpen(false);
-                          setTreeName("");
-                        }}
-                      >
-                        Avbryt
-                      </button>
-                    </div>
+            {importRelPreview.warnings.length ? (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Varningar</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {importRelPreview.warnings.slice(0, 8).map((w, i) => (
+                    <li key={i} style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+                {importRelPreview.warnings.length > 8 ? (
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
+                    …och {importRelPreview.warnings.length - 8} till.
                   </div>
                 ) : null}
+              </div>
+            ) : null}
 
-                {importCsvOpen ? (
-                  <div style={{ marginTop: 10 }}>
-                    <div style={styles.hintBox}>
-                      <div style={{ fontWeight: 700, marginBottom: 6 }}>Importera personer (CSV light)</div>
-                      <div style={{ marginBottom: 8 }}>
-                        CSV ska ha minst kolumnerna <strong>förnamn</strong> och <strong>efternamn</strong>.
-                        Övriga stöds: kön, födelseår, dödsår, platsnamn, lat, lng.
-                      </div>
-                      <div style={{ marginBottom: 10, fontSize: 12, color: "var(--muted)" }}>
-                        Obs: person_id i CSV ignoreras – nya ID skapas vid import.
-                      </div>
+            <div style={{ marginTop: 10 }}>
+              <div style={styles.smallMuted}>Importbara relationer: {countImportableRelations()}</div>
+            </div>
 
-                      <input
-                        type="file"
-                        accept=".csv,text/csv"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (!f) return;
-                          handleImportPersonsCsv(f);
-                        }}
-                      />
-
-                      {importPreview ? (
-                        <div style={{ marginTop: 12 }}>
-                          <div style={{ fontWeight: 700, marginBottom: 6 }}>Förhandsvisning</div>
-                          <div style={styles.smallMuted}>Hittade {importPreview.rows.length} personer att importera.</div>
-
-                          {importPreview.warnings.length ? (
-                            <div style={{ marginTop: 10 }}>
-                              <div style={{ fontWeight: 700, marginBottom: 6 }}>Varningar</div>
-                              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                                {importPreview.warnings.slice(0, 8).map((w, i) => (
-                                  <li key={i} style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
-                                    {w}
-                                  </li>
-                                ))}
-                              </ul>
-                              {importPreview.warnings.length > 8 ? (
-                                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
-                                  …och {importPreview.warnings.length - 8} till.
-                                </div>
-                              ) : null}
-
-                {importRelOpen ? (
-                  <div style={{ marginTop: 10 }}>
-                    <div style={styles.hintBox}>
-                      <div style={{ fontWeight: 700, marginBottom: 6 }}>Importera relationer (CSV mapping)</div>
-                      <div style={{ marginBottom: 8 }}>
-                        CSV ska innehålla kolumnerna <strong>person_a</strong>, <strong>relationstyp</strong>, <strong>person_b</strong>.
-                        (Det matchar vår export-fil.)
-                      </div>
-
-                      <input
-                        type="file"
-                        accept=".csv,text/csv"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (!f) return;
-                          handleImportRelationsCsv(f);
-                        }}
-                      />
-
-                      {importRelPreview ? (
-                        <div style={{ marginTop: 12 }}>
-                          <div style={{ fontWeight: 700, marginBottom: 6 }}>Mapping</div>
-                          <div style={styles.smallMuted}>
-                            Matcha namnen från CSV till personer i släkten. Sedan importeras relationerna.
-                          </div>
-
-                          <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-                            {Array.from(new Set(importRelPreview.rows.flatMap((x) => [x.aName, x.bName])))
-                              .sort((a, b) => a.localeCompare(b))
-                              .map((name) => (
-                                <label key={name} style={{ ...styles.label, marginTop: 0 }}>
-                                  {name}
-                                  <select
-                                    style={styles.select}
-                                    value={importRelMap[name] ?? ""}
-                                    onChange={(e) => setImportRelMap((prev) => ({ ...prev, [name]: e.target.value }))}
-                                  >
-                                    <option value="">(ej matchad)</option>
-                                    {people.map((p) => (
-                                      <option key={p.id} value={p.id}>
-                                        {p.first_name} {p.last_name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                              ))}
-                          </div>
-
-                          {importRelPreview.warnings.length ? (
-                            <div style={{ marginTop: 10 }}>
-                              <div style={{ fontWeight: 700, marginBottom: 6 }}>Varningar</div>
-                              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                                {importRelPreview.warnings.slice(0, 8).map((w, i) => (
-                                  <li key={i} style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
-                                    {w}
-                                  </li>
-                                ))}
-                              </ul>
-                              {importRelPreview.warnings.length > 8 ? (
-                                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
-                                  …och {importRelPreview.warnings.length - 8} till.
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : null}
-
-                          <div style={{ marginTop: 10 }}>
-                            <div style={styles.smallMuted}>Importbara relationer: {countImportableRelations()}</div>
-                          </div>
-
-                          <div style={styles.row}>
-                            <button style={styles.secondary} onClick={autoMatchRelations} disabled={importRelBusy}>
-                              Auto-match
-                            </button>
-                            <button style={styles.primary} onClick={confirmImportRelations} disabled={importRelBusy}>
-                              {importRelBusy ? "Importerar…" : "Importera"}
-                            </button>
-                            <button
-                              style={styles.secondary}
-                              onClick={() => {
-                                if (importRelBusy) return;
-                                setImportRelPreview(null);
-                                setImportRelMap({});
-                              }}
-                            >
-                              Rensa
-                            </button>
-                            <button
-                              style={styles.secondary}
-                              onClick={() => {
-                                if (importRelBusy) return;
-                                if (importRelPreview && !window.confirm("Stäng import? Mapping försvinner.")) return;
-                                setImportRelOpen(false);
-                                setImportRelPreview(null);
-                                setImportRelMap({});
-                              }}
-                            >
-                              Stäng
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-                          Välj en relations-CSV för att börja.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-
-                            </div>
-                          ) : null}
-
-                          <div style={styles.row}>
-                            <button style={styles.primary} onClick={confirmImportPersons} disabled={importBusy}>
-                              {importBusy ? "Importerar…" : "Importera"}
-                            </button>
-                            <button
-                              style={styles.secondary}
-                              onClick={() => {
-                                if (importBusy) return;
-                                setImportPreview(null);
-                              }}
-                            >
-                              Rensa
-                            </button>
-                            <button
-                              style={styles.secondary}
-                              onClick={() => {
-                                if (importBusy) return;
-                                if (importPreview && !window.confirm("Stäng import? Förhandsvisningen försvinner.")) return;
-                                setImportCsvOpen(false);
-                                setImportPreview(null);
-                              }}
-                            >
-                              Stäng
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
-                          Välj en CSV-fil för att skapa en förhandsvisning.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-
-
+            <div style={styles.row}>
+              <button style={styles.secondary} onClick={autoMatchRelations} disabled={importRelBusy}>
+                Auto-match
+              </button>
+              <button style={styles.primary} onClick={confirmImportRelations} disabled={importRelBusy}>
+                {importRelBusy ? "Importerar…" : "Importera"}
+              </button>
+              <button
+                style={styles.secondary}
+                onClick={() => {
+                  if (importRelBusy) return;
+                  setImportRelPreview(null);
+                  setImportRelMap({});
+                }}
+              >
+                Rensa
+              </button>
+              <button
+                style={styles.secondary}
+                onClick={() => {
+                  if (importRelBusy) return;
+                  if (importRelPreview && !window.confirm("Stäng import? Mapping försvinner.")) return;
+                  setImportRelOpen(false);
+                  setImportRelPreview(null);
+                  setImportRelMap({});
+                }}
+              >
+                Stäng
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+            Välj en relations-CSV för att börja.
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null}
 
                 {error && <div style={styles.error}>{error}</div>}
 
