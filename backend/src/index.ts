@@ -10,19 +10,51 @@ import { requireAuth } from "./middleware.js";
 
 const PORT = Number(process.env.PORT ?? "4000");
 
-// CORS: Render/GitHub Pages i prod, localhost i dev
-const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+// CORS: Render/GitHub Pages i prod, localhost i dev.
+// Robust: om du råkar sätta CORS_ORIGIN till en hel URL (med path) så plockar vi ut origin.
+// Stöd: flera origins via kommaseparerad lista i CORS_ORIGIN.
+function normalizeOrigin(value: string): string {
+  const v = (value || "").trim();
+  if (!v) return "";
+  try {
+    return new URL(v).origin;
+  } catch {
+    // fallback: ta bort ev. trailing slash
+    return v.replace(/\/+$/, "");
+  }
+}
+
+const rawCors = process.env.CORS_ORIGIN || "http://localhost:5173";
+const allowedOrigins = Array.from(
+  new Set(
+    rawCors
+      .split(",")
+      .map(normalizeOrigin)
+      .filter(Boolean)
+      .concat(["http://localhost:5173"])
+  )
+);
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, cb) => {
+    // same-origin / server-to-server / curl saknar ofta Origin-header -> tillåt
+    if (!origin) return cb(null, true);
+    const o = normalizeOrigin(origin);
+    if (allowedOrigins.includes(o)) return cb(null, true);
+    return cb(null, false);
+  },
+  credentials: false,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400
+};
 
 const app = express();
 
 app.use(helmet());
 app.use(express.json({ limit: "200kb" }));
-app.use(
-  cors({
-    origin: [corsOrigin, "http://localhost:5173"],
-    credentials: false
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.get("/health", async (_req, res) => {
   try {
