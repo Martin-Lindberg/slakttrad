@@ -396,7 +396,7 @@ export function App() {
 
   function resetAllForms() {
     resetPersonForm(true);
-    resetRelationForm(true);
+    resetRelationForm();
     setCreateTreeOpen(false);
     setTreeName("");
     setImportCsvOpen(false);
@@ -657,8 +657,8 @@ export function App() {
         first_name: first,
         last_name: last,
         gender: (gender === "man" || gender === "kvinna") ? gender : (gender ? gender : null),
-        birth_year: birth && Number.isFinite(birth_year) ? Math.trunc(birth_year) : null,
-        death_year: death && Number.isFinite(death_year) ? Math.trunc(death_year) : null,
+        birth_year: (birth && typeof birth_year === "number" && Number.isFinite(birth_year)) ? Math.trunc(birth_year) : null,
+        death_year: (death && typeof death_year === "number" && Number.isFinite(death_year)) ? Math.trunc(death_year) : null,
         place_label: place_label || null,
         lat: (lat && lng && Number.isFinite(latNum) && Number.isFinite(lngNum)) ? latNum : null,
         lng: (lat && lng && Number.isFinite(latNum) && Number.isFinite(lngNum)) ? lngNum : null
@@ -886,7 +886,7 @@ export function App() {
     setRelationsSearch("");
     setActiveTree(tree.id);
     resetPersonForm(true);
-    resetRelationForm(true);
+    resetRelationForm();
     setView("people");
   }
 
