@@ -201,14 +201,14 @@ app.post("/trees/:treeId/people", requireAuth, async (req, res) => {
   if (!owns.rowCount) return res.status(404).json({ error: "Trädet finns inte." });
 
   const body = req.body ?? {};
-  const firstName = String(body.firstName ?? "").trim();
-  const lastName = String(body.lastName ?? "").trim();
+  const firstName = String((body.firstName ?? body.first_name ?? "")).trim();
+  const lastName = String((body.lastName ?? body.last_name ?? "")).trim();
   const gender = body.gender === "man" || body.gender === "kvinna" ? body.gender : null;
 
-  const birthYear = body.birthYear === null || body.birthYear === undefined || body.birthYear === "" ? null : Number(body.birthYear);
-  const deathYear = body.deathYear === null || body.deathYear === undefined || body.deathYear === "" ? null : Number(body.deathYear);
+  const birthYear = ((body.birthYear ?? body.birth_year) === null || (body.birthYear ?? body.birth_year) === undefined || (body.birthYear ?? body.birth_year) === "" ? null : Number(body.birthYear ?? body.birth_year));
+  const deathYear = ((body.deathYear ?? body.death_year) === null || (body.deathYear ?? body.death_year) === undefined || (body.deathYear ?? body.death_year) === "" ? null : Number(body.deathYear ?? body.death_year));
 
-  const placeName = typeof body.placeName === "string" ? body.placeName.trim() : null;
+  const placeName = typeof (body.placeName ?? body.place_label ?? body.place_name) === "string" ? String(body.placeName ?? body.place_label ?? body.place_name).trim() : null;
   const lat = body.lat === null || body.lat === undefined || body.lat === "" ? null : Number(body.lat);
   const lng = body.lng === null || body.lng === undefined || body.lng === "" ? null : Number(body.lng);
 
@@ -238,14 +238,14 @@ app.put("/trees/:treeId/people/:personId", requireAuth, async (req, res) => {
   if (!exists.rowCount) return res.status(404).json({ error: "Personen finns inte." });
 
   const body = req.body ?? {};
-  const firstName = String(body.firstName ?? "").trim();
-  const lastName = String(body.lastName ?? "").trim();
+  const firstName = String((body.firstName ?? body.first_name ?? "")).trim();
+  const lastName = String((body.lastName ?? body.last_name ?? "")).trim();
   const gender = body.gender === "man" || body.gender === "kvinna" ? body.gender : null;
 
-  const birthYear = body.birthYear === null || body.birthYear === undefined || body.birthYear === "" ? null : Number(body.birthYear);
-  const deathYear = body.deathYear === null || body.deathYear === undefined || body.deathYear === "" ? null : Number(body.deathYear);
+  const birthYear = ((body.birthYear ?? body.birth_year) === null || (body.birthYear ?? body.birth_year) === undefined || (body.birthYear ?? body.birth_year) === "" ? null : Number(body.birthYear ?? body.birth_year));
+  const deathYear = ((body.deathYear ?? body.death_year) === null || (body.deathYear ?? body.death_year) === undefined || (body.deathYear ?? body.death_year) === "" ? null : Number(body.deathYear ?? body.death_year));
 
-  const placeName = typeof body.placeName === "string" ? body.placeName.trim() : null;
+  const placeName = typeof (body.placeName ?? body.place_label ?? body.place_name) === "string" ? String(body.placeName ?? body.place_label ?? body.place_name).trim() : null;
   const lat = body.lat === null || body.lat === undefined || body.lat === "" ? null : Number(body.lat);
   const lng = body.lng === null || body.lng === undefined || body.lng === "" ? null : Number(body.lng);
 
