@@ -37,7 +37,7 @@ jobs:
       - name: Build
         env:
           # NOTE: For public usage you must point this at a hosted backend.
-          VITE_API_BASE: http://localhost:4000
+          VITE_API_BASE: https://slakttrad.onrender.com
         run: npm run build
 
       - name: Upload artifact
