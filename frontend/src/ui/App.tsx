@@ -428,22 +428,31 @@ export function App() {
   }
 
   async function refreshTrees(setDefaultActive = false) {
-    setError(null);
-    try {
-      const data = await api<{ trees: Tree[] }>("/trees");
-      setTrees(data.trees ?? []);
-      if (setDefaultActive && !getActiveTreeId() && (data.trees?.length ?? 0) > 0) {
-        setActiveTree(data.trees[0].id);
-      }
-      // if activeTreeId no longer exists, clear it
-      const current = getActiveTreeId();
-      if (current && !(data.trees ?? []).some((t) => t.id === current)) {
-        setActiveTree(null);
-      }
-    } catch (e: any) {
-      setError(e?.message ?? "Kunde inte hämta släktträd.");
+  setError(null);
+  try {
+    const data = await api<any>("/trees");
+
+    const list: Tree[] = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.trees)
+      ? data.trees
+      : [];
+
+    setTrees(list);
+
+    if (setDefaultActive && !getActiveTreeId() && list.length > 0) {
+      setActiveTree(list[0].id);
     }
+
+    const current = getActiveTreeId();
+    if (current && !list.some((t) => t.id === current)) {
+      setActiveTree(null);
+    }
+  } catch (e: any) {
+    setError(e?.message ?? "Kunde inte hämta släktträd.");
   }
+}
+
 
   async function refreshPeople(treeId: string | null) {
     setError(null);
