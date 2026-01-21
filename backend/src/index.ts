@@ -59,7 +59,7 @@ app.options("*", cors(corsOptions));
 app.get("/health", async (_req, res) => {
   try {
     await pingDb();
-    return res.json({ ok: true, id: treeId, treeId, name, treeName: name });
+    return res.json({ ok: true });
   } catch (e: any) {
     return res.status(500).json({ ok: false, error: e?.message ?? "DB fel" });
   }
