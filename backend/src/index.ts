@@ -59,7 +59,7 @@ app.options("*", cors(corsOptions));
 app.get("/health", async (_req, res) => {
   try {
     await pingDb();
-    return res.json({ ok: true });
+    return res.json({ ok: true, id: treeId, treeId, name, treeName: name });
   } catch (e: any) {
     return res.status(500).json({ ok: false, error: e?.message ?? "DB fel" });
   }
@@ -130,7 +130,7 @@ app.get("/me", requireAuth, async (req, res) => {
 app.get("/trees", requireAuth, async (req, res) => {
   const userId = req.user!.id;
   const r = await pool.query("select id,name,created_at,updated_at from trees where user_id=$1 order by created_at desc", [userId]);
-  return res.json(r.rows.map((x) => ({ id: x.id, name: x.name, createdAt: x.created_at, updatedAt: x.updated_at })));
+  return res.json(r.rows.map((x) => ({ id: x.id, treeId: x.id, name: x.name, treeName: x.name, createdAt: x.created_at, updatedAt: x.updated_at })));
 });
 
 app.post("/trees", requireAuth, async (req, res) => {
@@ -138,7 +138,7 @@ app.post("/trees", requireAuth, async (req, res) => {
   const name = String(req.body?.name ?? "").trim();
   if (!name) return res.status(400).json({ error: "Ange ett namn för släkten." });
   const r = await pool.query("insert into trees(user_id,name) values($1,$2) returning id,name", [userId, name]);
-  return res.json({ id: r.rows[0].id, name: r.rows[0].name });
+  return res.status(201).json({ id: r.rows[0].id, treeId: r.rows[0].id, name: r.rows[0].name, treeName: r.rows[0].name });
 });
 
 app.put("/trees/:treeId", requireAuth, async (req, res) => {
@@ -162,7 +162,7 @@ app.delete("/trees/:treeId", requireAuth, async (req, res) => {
   if (!owns.rowCount) return res.status(404).json({ error: "Trädet finns inte." });
 
   await pool.query("delete from trees where id=$1", [treeId]);
-  return res.json({ ok: true });
+  return res.json({ ok: true, id: treeId, treeId });
 });
 
 // People
