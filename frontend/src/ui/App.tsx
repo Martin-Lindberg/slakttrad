@@ -652,7 +652,6 @@ export function App() {
         lat: hasValidLatLng ? latNum : null,
         lng: hasValidLatLng ? lngNum : null
       });
-      });
     }
 
     if (!rows.length) return setError("Ingen importerbar data hittades i CSV.");
