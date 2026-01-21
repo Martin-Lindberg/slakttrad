@@ -55,43 +55,6 @@ type Person = {
   place_label: string | null;
   updated_at?: string;
 };
-
-function normalizePerson(raw: any): Person {
-  const first_name = String(raw?.first_name ?? raw?.firstName ?? raw?.first ?? "").trim();
-  const last_name = String(raw?.last_name ?? raw?.lastName ?? raw?.last ?? "").trim();
-
-  const genderRaw = raw?.gender ?? raw?.sex ?? null;
-  const gender = genderRaw == null ? null : String(genderRaw);
-
-  const birthRaw = raw?.birth_year ?? raw?.birthYear ?? null;
-  const deathRaw = raw?.death_year ?? raw?.deathYear ?? null;
-
-  const birth_year =
-    typeof birthRaw === "number" ? birthRaw : typeof birthRaw === "string" && birthRaw.trim() ? Number(birthRaw) : null;
-  const death_year =
-    typeof deathRaw === "number" ? deathRaw : typeof deathRaw === "string" && deathRaw.trim() ? Number(deathRaw) : null;
-
-  const latRaw = raw?.lat ?? raw?.latitude ?? null;
-  const lngRaw = raw?.lng ?? raw?.longitude ?? null;
-  const lat = typeof latRaw === "number" ? latRaw : typeof latRaw === "string" && latRaw.trim() ? Number(latRaw) : null;
-  const lng = typeof lngRaw === "number" ? lngRaw : typeof lngRaw === "string" && lngRaw.trim() ? Number(lngRaw) : null;
-
-  const placeRaw = raw?.place_label ?? raw?.placeLabel ?? raw?.place_name ?? raw?.placeName ?? null;
-  const place_label = placeRaw == null ? null : String(placeRaw);
-
-  return {
-    id: String(raw?.id ?? raw?.personId ?? ""),
-    first_name,
-    last_name,
-    gender,
-    birth_year: Number.isFinite(birth_year as any) ? (birth_year as number) : null,
-    death_year: Number.isFinite(death_year as any) ? (death_year as number) : null,
-    lat: Number.isFinite(lat as any) ? (lat as number) : null,
-    lng: Number.isFinite(lng as any) ? (lng as number) : null,
-    place_label: place_label && place_label.trim() ? place_label.trim() : null,
-    updated_at: raw?.updated_at ?? raw?.updatedAt
-  };
-}
 type Relation = {
   id: string;
   from_person_id: string;
@@ -433,7 +396,7 @@ export function App() {
 
   function resetAllForms() {
     resetPersonForm(true);
-    resetRelationForm();
+    resetRelationForm(true);
     setCreateTreeOpen(false);
     setTreeName("");
     setImportCsvOpen(false);
@@ -467,23 +430,14 @@ export function App() {
   async function refreshTrees(setDefaultActive = false) {
     setError(null);
     try {
-      const data = await api<any>("/trees");
-
-      const list: Tree[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.trees)
-        ? data.trees
-        : [];
-
-      setTrees(list);
-
-      if (setDefaultActive && !getActiveTreeId() && list.length > 0) {
-        setActiveTree(list[0].id);
+      const data = await api<{ trees: Tree[] }>("/trees");
+      setTrees(data.trees ?? []);
+      if (setDefaultActive && !getActiveTreeId() && (data.trees?.length ?? 0) > 0) {
+        setActiveTree(data.trees[0].id);
       }
-
       // if activeTreeId no longer exists, clear it
       const current = getActiveTreeId();
-      if (current && !list.some((t) => t.id === current)) {
+      if (current && !(data.trees ?? []).some((t) => t.id === current)) {
         setActiveTree(null);
       }
     } catch (e: any) {
@@ -495,16 +449,8 @@ export function App() {
     setError(null);
     if (!treeId) return setPeople([]);
     try {
-      const data = await api<any>(`/trees/${treeId}/people`);
-
-      const rawList: any[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.people)
-        ? data.people
-        : [];
-
-      const list: Person[] = rawList.map(normalizePerson).filter((p) => !!p.id);
-      setPeople(list);
+      const data = await api<{ people: Person[] }>(`/trees/${treeId}/people`);
+      setPeople(data.people ?? []);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte hämta personer.");
     }
@@ -514,13 +460,8 @@ export function App() {
     setError(null);
     if (!treeId) return setRelations([]);
     try {
-      const data = await api<any>(`/trees/${treeId}/relations`);
-      const rawList: any[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.relations)
-        ? data.relations
-        : [];
-      setRelations(rawList as Relation[]);
+      const data = await api<{ relations: Relation[] }>(`/trees/${treeId}/relations`);
+      setRelations(data.relations ?? []);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte hämta relationer.");
     }
@@ -561,7 +502,7 @@ export function App() {
     if (!name) return setError("Ange ett namn.");
     try {
       await api<{ id: string; name: string }>(`/trees/${treeId}`, {
-        method: "PATCH",
+        method: "PUT",
         body: JSON.stringify({ name })
       });
       setRenamingTreeId(null);
@@ -700,8 +641,8 @@ export function App() {
         first_name: first,
         last_name: last,
         gender: (gender === "man" || gender === "kvinna") ? gender : (gender ? gender : null),
-        birth_year: (birth && typeof birth_year === "number" && Number.isFinite(birth_year)) ? Math.trunc(birth_year) : null,
-        death_year: (death && typeof death_year === "number" && Number.isFinite(death_year)) ? Math.trunc(death_year) : null,
+        birth_year: birth && Number.isFinite(birth_year) ? Math.trunc(birth_year) : null,
+        death_year: death && Number.isFinite(death_year) ? Math.trunc(death_year) : null,
         place_label: place_label || null,
         lat: (lat && lng && Number.isFinite(latNum) && Number.isFinite(lngNum)) ? latNum : null,
         lng: (lat && lng && Number.isFinite(latNum) && Number.isFinite(lngNum)) ? lngNum : null
@@ -929,7 +870,7 @@ export function App() {
     setRelationsSearch("");
     setActiveTree(tree.id);
     resetPersonForm(true);
-    resetRelationForm();
+    resetRelationForm(true);
     setView("people");
   }
 
@@ -994,7 +935,7 @@ export function App() {
       } else {
         const current = people.find((x) => x.id === editingPersonId);
         await api<Person>(`/trees/${activeTreeId}/people/${editingPersonId}`, {
-          method: "PATCH",
+          method: "PUT",
           body: JSON.stringify({
             ...base,
             lat: current?.lat ?? null,
@@ -1004,10 +945,6 @@ export function App() {
         });
       }
       await refreshPeople(activeTreeId);
-      setMapModalOpen(false);
-      setMapPersonId(null);
-      setMapPick(null);
-      setMapPlaceLabel("");
       resetPersonForm(true);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte spara person.");
@@ -1049,7 +986,7 @@ export function App() {
 
     try {
       await api<Person>(`/trees/${activeTreeId}/people/${mapPersonId}`, {
-        method: "PATCH",
+        method: "PUT",
         body: JSON.stringify({
           first_name: p.first_name,
           last_name: p.last_name,
@@ -1063,8 +1000,6 @@ export function App() {
       });
       setMapModalOpen(false);
       setMapPersonId(null);
-      setMapPick(null);
-      setMapPlaceLabel("");
       await refreshPeople(activeTreeId);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte spara plats.");
