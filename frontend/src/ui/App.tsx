@@ -456,10 +456,13 @@ export function App() {
 
   async function refreshPeople(treeId: string | null) {
     setError(null);
+    console.log(treeId);
     if (!treeId) return setPeople([]);
     try {
       const data = await api<{ people: Person[] }>(`/trees/${treeId}/people`);
       setPeople(data.people ?? []);
+      console.log(data)
+      console.log(data.people)
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte hämta personer.");
     }
@@ -954,6 +957,7 @@ export function App() {
           })
         });
       }
+      console.log("should refresh")
       await refreshPeople(activeTreeId);
       resetPersonForm(true);
     } catch (e: any) {
