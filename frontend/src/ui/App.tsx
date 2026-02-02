@@ -458,8 +458,42 @@ export function App() {
     setError(null);
     if (!treeId) return setPeople([]);
     try {
-      const data = await api<{ people: Person[] }>(`/trees/${treeId}/people`);
-      setPeople(data.people ?? []);
+      const data = await api<any>(`/trees/${treeId}/people`);
+
+      const rawList: any[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.people)
+        ? data.people
+        : [];
+
+      const normalized: Person[] = rawList.map((p: any) => {
+        const lat =
+          (typeof p.lat === "number") ? p.lat :
+          (typeof p.placeLat === "number") ? p.placeLat :
+          (typeof p.place_lat === "number") ? p.place_lat :
+          null;
+
+        const lng =
+          (typeof p.lng === "number") ? p.lng :
+          (typeof p.placeLng === "number") ? p.placeLng :
+          (typeof p.place_lng === "number") ? p.place_lng :
+          null;
+
+        return {
+          id: p.id ?? p.personId ?? p.person_id,
+          first_name: p.first_name ?? p.firstName ?? "",
+          last_name: p.last_name ?? p.lastName ?? "",
+          gender: p.gender ?? null,
+          birth_year: (typeof (p.birth_year ?? p.birthYear) === "number") ? (p.birth_year ?? p.birthYear) : null,
+          death_year: (typeof (p.death_year ?? p.deathYear) === "number") ? (p.death_year ?? p.deathYear) : null,
+          lat,
+          lng,
+          place_label: p.place_label ?? p.placeName ?? p.placeLabel ?? null,
+          updated_at: p.updated_at ?? p.updatedAt
+        } as Person;
+      });
+
+      setPeople(normalized);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte hämta personer.");
     }
