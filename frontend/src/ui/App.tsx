@@ -1074,12 +1074,6 @@ export function App() {
       setError(e?.message ?? "Kunde inte skapa relation.");
     }
   }
-      resetRelationForm();
-      await refreshRelations(activeTreeId);
-    } catch (e: any) {
-      setError(e?.message ?? "Kunde inte skapa relation.");
-    }
-  }
 
   async function deleteRelation(relationId: string) {
     setError(null);
