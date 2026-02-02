@@ -498,7 +498,8 @@ export function App() {
       });
       setCreateTreeOpen(false);
       setTreeName("");
-      await refreshTrees(false);
+      await refreshTrees(true);
+
       setActiveTree(created.id);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte skapa släkt.");
