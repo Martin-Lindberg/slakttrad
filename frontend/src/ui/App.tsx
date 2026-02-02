@@ -458,42 +458,8 @@ export function App() {
     setError(null);
     if (!treeId) return setPeople([]);
     try {
-      const data = await api<any>(`/trees/${treeId}/people`);
-
-      const rawList: any[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.people)
-        ? data.people
-        : [];
-
-      const normalized: Person[] = rawList.map((p: any) => {
-        const lat =
-          (typeof p.lat === "number") ? p.lat :
-          (typeof p.placeLat === "number") ? p.placeLat :
-          (typeof p.place_lat === "number") ? p.place_lat :
-          null;
-
-        const lng =
-          (typeof p.lng === "number") ? p.lng :
-          (typeof p.placeLng === "number") ? p.placeLng :
-          (typeof p.place_lng === "number") ? p.place_lng :
-          null;
-
-        return {
-          id: p.id ?? p.personId ?? p.person_id,
-          first_name: p.first_name ?? p.firstName ?? "",
-          last_name: p.last_name ?? p.lastName ?? "",
-          gender: p.gender ?? null,
-          birth_year: (typeof (p.birth_year ?? p.birthYear) === "number") ? (p.birth_year ?? p.birthYear) : null,
-          death_year: (typeof (p.death_year ?? p.deathYear) === "number") ? (p.death_year ?? p.deathYear) : null,
-          lat,
-          lng,
-          place_label: p.place_label ?? p.placeName ?? p.placeLabel ?? null,
-          updated_at: p.updated_at ?? p.updatedAt
-        } as Person;
-      });
-
-      setPeople(normalized);
+      const data = await api<{ people: Person[] }>(`/trees/${treeId}/people`);
+      setPeople(data.people ?? []);
     } catch (e: any) {
       setError(e?.message ?? "Kunde inte hämta personer.");
     }
@@ -1070,15 +1036,44 @@ export function App() {
     if (!relFrom || !relTo) return setError("Välj två personer.");
     if (relFrom === relTo) return setError("Du måste välja två olika personer.");
 
+    const relKey = normalizeRelationType(relType);
+
+    // Extra validering: förälder kan inte vara född efter barnet (om båda år finns)
+    if (relKey === "förälder/barn") {
+      const a = people.find((p) => p.id === relFrom);
+      const b = people.find((p) => p.id === relTo);
+      if (a?.birth_year != null && b?.birth_year != null && a.birth_year > b.birth_year) {
+        return setError("Förälder måste vara född före barnet. Byt ordning på personerna.");
+      }
+    }
+
     try {
+      // Backend-kompat: skicka både snake_case och camelCase så att olika serverversioner accepterar payloaden.
       await api<Relation>(`/trees/${activeTreeId}/relations`, {
         method: "POST",
         body: JSON.stringify({
+          // snake_case (äldre backend)
           from_person_id: relFrom,
           to_person_id: relTo,
-          relation_type: normalizeRelationType(relType)
+          relation_type: relKey,
+
+          // camelCase (nyare backend / andra varianter)
+          fromPersonId: relFrom,
+          toPersonId: relTo,
+          relationType: relKey,
+
+          // extra aliaser (fail-soft)
+          fromId: relFrom,
+          toId: relTo,
+          type: relKey
         })
       });
+      resetRelationForm();
+      await refreshRelations(activeTreeId);
+    } catch (e: any) {
+      setError(e?.message ?? "Kunde inte skapa relation.");
+    }
+  }
       resetRelationForm();
       await refreshRelations(activeTreeId);
     } catch (e: any) {
